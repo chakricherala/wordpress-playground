@@ -1,4 +1,4 @@
-import { WebPHP } from '@php-wasm/web';
+import { loadWebRuntime } from '@php-wasm/web';
 import {
 	LatestSupportedWordPressVersion,
 	SupportedWordPressVersionsList,
@@ -20,6 +20,7 @@ export type ReceivedStartupOptions = {
 	sapiName?: string;
 	storage?: string;
 	phpExtensions?: string[];
+	siteSlug?: string;
 };
 
 export type ParsedStartupOptions = {
@@ -28,6 +29,7 @@ export type ParsedStartupOptions = {
 	sapiName: string;
 	storage: string;
 	phpExtensions: string[];
+	siteSlug: string;
 };
 
 export const receivedParams: ReceivedStartupOptions = {};
@@ -40,6 +42,7 @@ if (typeof url !== 'undefined') {
 	// Default to CLI to support the WP-CLI Blueprint step
 	receivedParams.sapiName = params.get('sapiName') || 'cli';
 	receivedParams.phpExtensions = params.getAll('php-extension');
+	receivedParams.siteSlug = params.get('site-slug') || undefined;
 }
 
 export const requestedWPVersion = receivedParams.wpVersion || '';
@@ -55,6 +58,7 @@ export const startupOptions = {
 	sapiName: receivedParams.sapiName || 'cli',
 	storage: receivedParams.storage || 'local',
 	phpExtensions: receivedParams.phpExtensions || [],
+	siteSlug: receivedParams.siteSlug,
 } as ParsedStartupOptions;
 
 export const downloadMonitor = new EmscriptenDownloadMonitor();
@@ -65,7 +69,7 @@ const memoizedFetch = createMemoizedFetch(monitoredFetch);
 
 export const createPhpRuntime = async () => {
 	let wasmUrl = '';
-	return await WebPHP.loadRuntime(startupOptions.phpVersion, {
+	return await loadWebRuntime(startupOptions.phpVersion, {
 		onPhpLoaderModuleLoaded: (phpLoaderModule) => {
 			wasmUrl = phpLoaderModule.dependencyFilename;
 			downloadMonitor.expectAssets({
@@ -94,7 +98,7 @@ export const createPhpRuntime = async () => {
 	});
 };
 
-export function spawnHandlerFactory(processManager: PHPProcessManager<WebPHP>) {
+export function spawnHandlerFactory(processManager: PHPProcessManager) {
 	return createSpawnHandler(async function (args, processApi, options) {
 		if (args[0] === 'exec') {
 			args.shift();

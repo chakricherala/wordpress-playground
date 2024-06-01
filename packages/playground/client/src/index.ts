@@ -6,7 +6,6 @@ export type {
 	PHPRequest,
 	PHPResponse,
 	UniversalPHP,
-	IsomorphicRemotePHP,
 	PHPOutput,
 	PHPResponseData,
 	ErrnoError,
@@ -58,6 +57,7 @@ export interface StartPlaygroundOptions {
 	 * @private
 	 */
 	sapiName?: string;
+	siteSlug?: string;
 }
 
 /**
@@ -76,6 +76,7 @@ export async function startPlaygroundWeb({
 	onBlueprintStepCompleted,
 	onClientConnected = () => {},
 	sapiName,
+	siteSlug,
 }: StartPlaygroundOptions): Promise<PlaygroundClient> {
 	assertValidRemote(remoteUrl);
 	allowStorageAccessByUserActivation(iframe);
@@ -89,6 +90,7 @@ export async function startPlaygroundWeb({
 			iframe,
 			setQueryParams(remoteUrl, {
 				['php-extension']: 'kitchen-sink',
+				'site-slug': siteSlug,
 			}),
 			progressTracker
 		);
@@ -107,6 +109,7 @@ export async function startPlaygroundWeb({
 			['sapi-name']: sapiName,
 			['php-extension']: compiled.phpExtensions,
 			['networking']: compiled.features.networking ? 'yes' : 'no',
+			'site-slug': siteSlug,
 		}),
 		progressTracker
 	);

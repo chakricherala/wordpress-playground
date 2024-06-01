@@ -72,6 +72,14 @@ const currentConfiguration: PlaygroundConfiguration = {
 	resetSite: false,
 };
 
+const siteSlug = query.get('site-slug') ?? undefined;
+
+if (siteSlug && storage !== 'browser') {
+	alert(
+		'Site slugs only work with browser storage. The site slug will be ignored.'
+	);
+}
+
 /*
  * The 6.3 release includes a caching bug where
  * registered styles aren't enqueued when they
@@ -133,6 +141,9 @@ function Main() {
 				query.get('ghexport-pr-action')
 			);
 		}
+		if (query.get('ghexport-pr-number')) {
+			values.prNumber = query.get('ghexport-pr-number')?.toString();
+		}
 		if (query.get('ghexport-playground-root')) {
 			values.fromPlaygroundRoot = query.get('ghexport-playground-root')!;
 		}
@@ -176,6 +187,7 @@ function Main() {
 				storage={storage}
 				displayMode={displayMode}
 				blueprint={blueprint}
+				siteSlug={siteSlug}
 				toolbarButtons={[
 					<PlaygroundConfigurationGroup
 						key="configuration"

@@ -1,4 +1,4 @@
-import { WebPHP, WebPHPEndpoint, exposeAPI } from '@php-wasm/web';
+import { exposeAPI } from '@php-wasm/web';
 import { EmscriptenDownloadMonitor } from '@php-wasm/progress';
 import { setURLScope } from '@php-wasm/scopes';
 import { wordPressSiteUrl } from './config';
@@ -8,7 +8,7 @@ import {
 	SupportedWordPressVersions,
 	sqliteDatabaseIntegrationModuleDetails,
 } from '@wp-playground/wordpress-builds';
-import { bootWordPress } from '@wp-playground/wordpress';
+
 import {
 	SyncProgressCallback,
 	bindOpfs,
@@ -34,6 +34,8 @@ import transportFetch from './playground-mu-plugin/playground-includes/wp_http_f
 import transportDummy from './playground-mu-plugin/playground-includes/wp_http_dummy.php?raw';
 /** @ts-ignore */
 import playgroundWebMuPlugin from './playground-mu-plugin/0-playground.php?raw';
+import { PHPWorker } from '@php-wasm/universal';
+import { bootWordPress } from '@wp-playground/wordpress';
 
 const scope = Math.random().toFixed(16);
 
@@ -50,9 +52,14 @@ if (
 	typeof navigator?.storage?.getDirectory !== 'undefined'
 ) {
 	virtualOpfsRoot = await navigator.storage.getDirectory();
-	virtualOpfsDir = await virtualOpfsRoot.getDirectoryHandle('wordpress', {
-		create: true,
-	});
+	virtualOpfsDir = await virtualOpfsRoot.getDirectoryHandle(
+		startupOptions.siteSlug === 'wordpress'
+			? startupOptions.siteSlug
+			: 'site-' + startupOptions.siteSlug,
+		{
+			create: true,
+		}
+	);
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	lastOpfsDir = virtualOpfsDir;
 	wordPressAvailableInOPFS = await playgroundAvailableInOpfs(virtualOpfsDir!);
@@ -86,7 +93,7 @@ if (!wordPressAvailableInOPFS) {
 }
 
 /** @inheritDoc PHPClient */
-export class PlaygroundWorkerEndpoint extends WebPHPEndpoint {
+export class PlaygroundWorkerEndpoint extends PHPWorker {
 	/**
 	 * A string representing the scope of the Playground instance.
 	 */
@@ -198,9 +205,6 @@ try {
 
 	const requestHandler = await bootWordPress({
 		siteUrl: setURLScope(wordPressSiteUrl, scope).toString(),
-		createPhpInstance() {
-			return new WebPHP();
-		},
 		createPhpRuntime,
 		wordPressZip,
 		sqliteIntegrationPluginZip,
